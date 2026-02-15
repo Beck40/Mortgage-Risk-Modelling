@@ -9,21 +9,14 @@ This repository serves as a professional portfolio demonstrating the technical p
 
 ---
 
-### 🎓 Apprenticeship Assessment Components
-
-To achieve a Distinction, the apprentice must meet 100% of the Pass criteria **and** 100% of the Distinction criteria across all assessment methods, as defined by the Institute for Apprenticeships & Technical Education (IfATE) Assessment Plan.
-
-This grade validates mastery across the following regulated assessment methods:
-
----
-
 #### Assessment Method 1: Project Report with Presentation
 
-**Grade Achieved:** Distinction (Meeting all Pass + Distinction criteria)
+**Grade Achieved:** Distinction
 
 A comprehensive work-based project documented in a technical report of approximately 5,000 words (+/- 10%), followed by a formal presentation and supplementary questioning.
 
 **Report Structure:**
+Written Report was on highly sensitive data and methodology, a summary framework is provided below: 
 - **Introduction & Background:** Outline of the business problem (unlocking capital capacity and strengthening balance sheet strategy).
 - **Methods & Justification:** Survey of potential alternatives and justification for chosen ML architectures (Logistic Regression vs. XGBoost vs. Ensemble).
 - **Scope & KPIs:** Defining predictive power targets (gAUC/ROC) and regulatory compliance benchmarks.
@@ -37,14 +30,13 @@ A comprehensive work-based project documented in a technical report of approxima
 **Presentation (75 Minutes):**
 - 30-minute presentation covering the high-level summary, practical application of knowledge, and business recommendations.
 - 45-minute technical Q&A assessing the depth of understanding and ability to justify technical choices.
-
 ---
 
 #### Assessment Method 2: Professional Discussion
 
-**Grade Achieved:** Distinction (Meeting all Pass + Distinction criteria)
+**Grade Achieved:** Distinction
 
-A 90-minute structured discussion underpinned by a portfolio of evidence. This assessment verified mastery over senior-level KSBs including:
+A 90-minute structured discussion underpinned by a portfolio of evidence.
 
 - **Leadership:** Mentoring junior analysts and leading technical migrations.
 - **Stakeholder Management:** Translating complex outputs for Finance, Audit, and Legal teams.
@@ -57,9 +49,9 @@ A 90-minute structured discussion underpinned by a portfolio of evidence. This a
 
 #### Assessment Method 3: Technical Test (Knowledge Test)
 
-**Grade Achieved:** Distinction (Meeting all Pass + Distinction criteria)
+**Grade Achieved:** Distinction
 
-A rigorous, closed-book examination designed to test technical knowledge and skills that cannot be fully assessed through project work alone.
+A rigorous, closed-book examination designed to test technical knowledge and skills that cannot be fully assessed through project work alone. 
 
 **Test Format & Administration:**
 - **Duration:** 100 minutes.
