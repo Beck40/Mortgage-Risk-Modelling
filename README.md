@@ -1,106 +1,78 @@
-# Artificial-Intelligence
+# Artificial Intelligence Apprenticeship Portfolio
 
-## Quantitative Risk & Machine Learning Portfolio
+## Challenger Modelling for Mortgage Possession Risk (PPGD)
 
-This repository serves as a professional portfolio demonstrating the technical proficiency, engineering standards, and strategic methodology developed during my Level 7 Artificial Intelligence Apprenticeship.
+This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeship (standard [ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)), delivered by Cambridge Spark while I worked in the quantitative modelling team at a leading European bank. It describes the assessments, the project they were based on, and the professional evidence behind them.
 
-> **Confidentiality & Compliance Notice:**  
-> This portfolio does not contain, reference, or replicate any proprietary methodologies, confidential data, or internal processes from current or former employers. All logic presented here is based on publicly available regulatory guidelines (e.g., Basel III/IV, PRA SS1/23) and standard academic machine learning practices.
-
----
-
-#### Assessment Method 1: Project Report with Presentation
-
-**Grade Achieved:** Distinction
-
-A comprehensive work-based project documented in a technical report of approximately 5,000 words (+/- 10%), followed by a formal presentation and supplementary questioning.
-
-**Report Structure:**
-Written Report was on highly sensitive data and methodology, a summary framework is provided below: 
-- **Introduction & Background:** Outline of the business problem (unlocking capital capacity and strengthening balance sheet strategy).
-- **Methods & Justification:** Survey of potential alternatives and justification for chosen ML architectures (Logistic Regression vs. XGBoost vs. Ensemble).
-- **Scope & KPIs:** Defining predictive power targets (gAUC/ROC) and regulatory compliance benchmarks.
-- **Data Selection & Pre-processing:** Integration of multi-source loan characteristics and borrower behaviour data.
-- **Implementation:** Performance metrics and transition from SAS to Python-based automated optimisation.
-- **Results:** Quantitative analysis of RWA efficiency and default detection improvements.
-- **Discussion & Conclusions:** Summary of findings, implications for balance sheet strategy, and caveats/limitations.
-- **Statistical Rigour:** Inclusion of uncertainty, bias, and error estimates as appropriate for PRA-regulated models.
-- **KSB Mapping:** Direct mapping of project activities to the Knowledge, Skills, and Behaviours of a Senior Data Scientist.
-
-**Presentation (75 Minutes):**
-- 30-minute presentation covering the high-level summary, practical application of knowledge, and business recommendations.
-- 45-minute technical Q&A assessing the depth of understanding and ability to justify technical choices.
----
-
-#### Assessment Method 2: Professional Discussion
-
-**Grade Achieved:** Distinction
-
-A 90-minute structured discussion underpinned by a portfolio of evidence.
-
-- **Leadership:** Mentoring junior analysts and leading technical migrations.
-- **Stakeholder Management:** Translating complex outputs for Finance, Audit, and Legal teams.
-- **Continuous Improvement:** Evidence of independent study in MLOps and Enterprise Python.
-- **Knowledge Transfer:** Established Python adoption frameworks (Teams channels, shared repositories, presentation materials) accelerating technical capability across a 60-person Quant Analytics function.
-- **Quality Assurance:** Conducted peer reviews for 4 internal colleagues and 5 external contractors, ensuring code quality and adherence to enterprise Python standards.
-- **Cross-Functional Collaboration:** Navigated complex stakeholder requirements across IVT, Finance, Audit, and Legal teams to balance technical innovation with regulatory constraints.
+> **Confidentiality note**
+> This repository does not contain employer data, code, documents or model results. The project report covered sensitive data and methodology, so this is a summary only. It draws on published guidance (Basel III/IV, PRA SS1/23) and standard machine learning practice.
 
 ---
 
-#### Assessment Method 3: Technical Test (Knowledge Test)
+## Assessment summary
 
-**Grade Achieved:** Distinction
-
-A rigorous, closed-book examination designed to test technical knowledge and skills that cannot be fully assessed through project work alone. 
-
-**Test Format & Administration:**
-- **Duration:** 100 minutes.
-- **Format:** 4 long-response questions based on complex technical scenarios.
-- **Conditions:** Closed-book, invigilated exam environment (no reference materials allowed).
-
-**Core Competencies Tested:**
-- Deep theoretical understanding of AI/ML algorithms and their appropriate application.
-- Problem-solving in unseen technical scenarios.
-- Evaluation of technical trade-offs and architectural decisions without access to documentation.
+| Assessment | Format | Outcome |
+|---|---|---|
+| Project report and presentation | ~5,000-word report, 30-minute presentation, 45-minute technical Q&A | Distinction |
+| Professional discussion | 90-minute structured discussion supported by a portfolio of evidence | Distinction |
+| Technical knowledge test | 100-minute closed-book exam, four long-response scenario questions | Distinction |
 
 ---
 
-### 📊 Technical Implementation: Risk Benchmarking Framework
+## The project
 
-This repository provides a clean-room implementation of the technical workflow used during the apprenticeship project.
+### Background
 
-**Portfolio Scope:** Applied to a £10bn+ mortgage portfolio (2010-2015 vintage), informing both PPGD and LGD regulatory frameworks.
+Banks that model mortgage losses under the internal ratings-based approach estimate Loss Given Default (LGD). One component is the Probability of Possession given Default (PPGD): of the loans that default, how likely is it that the property is repossessed? PPGD feeds into LGD, which combines with Probability of Default and Exposure at Default to estimate capital requirements for regulatory reporting. Regulators expect firms to consider alternative (challenger) models alongside the model in use.
+
+### Scope
+
+The existing approach was a decision tree that grouped accounts using a single feature. I developed a challenger model, with two separate PPGD models covering accounts not in default and accounts in default. A secondary aim was to build a framework that would support moving model development from SAS to Python.
+
+### Approach
+
+1. **Data preparation.** I combined mortgage transaction, property possession and collections/recoveries data, working with data engineers to source it. I engineered features before selection so they could be compared fairly with the raw ones. Data quality checks covered outliers and uninformative values for numerical features, and low-volume classes for categorical features. Missing values were kept as their own category rather than imputed, because the datasets were large enough not to need it.
+2. **Feature selection.** I used a filter method (validity, completeness, ranking by group-weighted AUC and intercorrelation), chosen because it is fast, transparent and less prone to overfitting than automated selection. The challenger used 14 features, compared with the single feature in the existing tree.
+3. **Model development.** XGBoost estimated each account's probability of possession. K-Means then grouped those probabilities into risk grades (for example low, medium and high). Hyperparameters were tuned with randomised search and cross-validation, with class imbalance handled explicitly because possession is rare.
+4. **Python framework.** The code included a connection to SAS so datasets could move between the existing environment and Python.
+
+### How the grades were evaluated
+
+In priority order:
+
+1. **Rank ordering:** grades should stay distinct and keep their order over time, assessed on a 4-quarter moving average to reduce quarterly noise.
+2. **Concentration:** accounts should be spread sensibly across grades (Herfindahl-Hirschman Index).
+3. **Heterogeneity:** grades should carry meaningfully different levels of risk.
+4. **Discrimination:** Gini / ROC AUC on test sets, overall and over time.
+5. **Accuracy:** MAE and RMSE of the predicted probabilities.
+
+Further checks were a classification report, ROC curve and Brier score for the reliability of the probabilities. Statistical rigour for a PRA-regulated setting meant including uncertainty, bias and error estimates.
+
+### Outcome and next steps
+
+I presented the challenger, its validation results and how it compared with the existing decision tree to senior stakeholders and the people who would run the model. This included introducing Brier score testing and the handling of imbalanced data. The next step was to test the grades in a live environment alongside the existing model as part of model monitoring.
+
+### Trade-offs and limitations
+
+- **Explainability.** A more flexible model needs a clear rationale for regulators, and for why it is preferred to a simple tree.
+- **Productionisation.** Moving the code into cloud infrastructure was harder than for a single tree.
+- **Compute.** Training took longer, and limited local memory caused problems on large datasets when not running on cloud infrastructure.
+- **External data.** Some inputs, such as house price data and outlook, were outside my control and needed checking before use.
 
 ---
 
-#### ⚙️ Phase 1: Data Preparation
+## Professional discussion: evidence themes
 
-- **Data Integration:** Combining disparate sources to create a unified view of risk.
-- **EDA & Cleansing:** Automated outlier detection and missing value imputation.
-- **Partitioning:** Stratified training/testing splits to handle imbalanced default classes.
-
----
-
-#### 🛠 Phase 2: Model Development
-
-- **Variable Selection:** Utilising Information Value (IV) and Correlation matrices for parsimonious feature sets.
-- **Benchmarking:** Implementation of Logistic Regression (Baseline), XGBoost (Predictive Power), and Ensemble Methods (Stability).
-- **Hyperparameter Optimisation:** Implemented automated grid search and cross-validation frameworks, reducing manual calibration effort by 70% whilst improving model stability and reproducibility.
+- **Knowledge transfer:** set up Python adoption support (a Teams channel, shared repositories and presentation materials) to help build capability across a 60-person quantitative analytics function.
+- **Quality assurance:** peer-reviewed code for internal colleagues and external contractors, as well as validating the transalation of SAS code to Python.
+- **Stakeholder management:** explained model outputs to finance, audit and legal teams.
+- **Monitoring:** established a quarterly monitoring framework for multiple mortgage risk models, with RAG-status reporting to senior leadership.
+- **Continuous improvement:** keen intrest in model optimisation and model explainability.
 
 ---
 
-#### 🧪 Phase 3: Validation & Soundness
+## References
 
-- **Qualitative:** Assessing conceptual soundness and statistical assumptions.
-- **Quantitative:** Measuring Predictive Power (Gini/ROC), Explanatory Adequacy, and Population Stability (PSI).
-- **Ongoing Performance Monitoring:** Established quarterly model monitoring framework for 10+ mortgage risk models, delivering RAG-status reports to senior leadership and identifying model drift requiring threshold adjustments.
-
----
-
-### 📚 References
-
-- **AI Apprenticeship Standard:** [ST0763](https://skillsengland.education.gov.uk/media/3685/st0763_artificial-intelligence-ai-data-specialist_l7_ap-for-publication_qm.pdf).
-- **Regulatory Guidelines:** [PRA SS1/23 - Model Risk Management](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/supervisory-statement/2023/ss123.pdf).
-- **Mathematical Model Framework:** [Basel III/IV Capital Requirements](https://www.bis.org/bcbs/basel3.htm).
-
-> **Note:** This repository is intended for demonstration purposes only.
+- [AI (Data Specialist) Level 7 apprenticeship standard, ST0763](https://skillsengland.education.gov.uk/media/3685/st0763_artificial-intelligence-ai-data-specialist_l7_ap-for-publication_qm.pdf)
+- [PRA SS1/23: Model risk management principles for banks](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/supervisory-statement/2023/ss123.pdf)
+- [Basel III: international regulatory framework for banks](https://www.bis.org/bcbs/basel3.htm)
