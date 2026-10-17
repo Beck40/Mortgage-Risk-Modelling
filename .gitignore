@@ -1,0 +1,7 @@
+# Ignore raw macro data files
+/data/raw_macro/*.csv
+/data/raw_macro/*.xlsx
+
+# Ignore generated synthetic datasets (full, train, test, and OOT splits)
+/data/synthetic_portfolio/*.csv
+!/data/synthetic_portfolio/.gitkeep

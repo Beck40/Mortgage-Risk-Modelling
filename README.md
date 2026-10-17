@@ -2,7 +2,7 @@
 
 ## Challenger Modelling for Mortgage Possession Risk (PPGD)
 
-This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeship (standard [ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)), delivered by Cambridge Spark while I worked in the quantitative modelling team at a leading European bank. It describes the assessments, the project they were based on, and the professional evidence behind them.
+This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeship (standard [ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)), delivered by Cambridge Spark while I worked in the quantitative modelling team. It describes the assessments, the project they were based on, and the professional evidence behind them.
 
 > **Confidentiality note**
 > This repository does not contain employer data, code, documents or model results. The project report covered sensitive data and methodology, so this is a summary only. It draws on published guidance (Basel III/IV, PRA SS1/23) and standard machine learning practice.
@@ -70,6 +70,25 @@ I presented the challenger, its validation results and how it compared with the 
 - **Continuous improvement:** keen intrest in model optimisation and model explainability.
 
 ---
+
+## Open-Source Pipeline
+
+To demonstrate the modelling framework without exposing confidential employer data, this repository includes a Python pipeline that generates a realistic and statistically calibrated synthetic mortgage portfolio. 
+
+The data generator (`src/01_synthetic_data_generator.py`) uses a Monte Carlo simulation combined with real macroeconomic datasets (ONS, MoJ, FCA, HM Land Registry) to produce 600,000 defaulted mortgage accounts. The target variable (Probability of Possession given Default) is mathematically weighted to reflect real-world stress scenarios, achieving an authentic ~7% baseline possession rate across a 78-feature space.
+
+### How to Reproduce
+
+1. **Clone the repository:**
+   `git clone https://github.com/Beck40/Mortgage-Risk-Modelling.git`
+2. **Install dependencies:**
+   `pip install -r requirements.txt`
+3. **Acquire the public macro datasets:**
+   Follow the instructions in `data/README.md` to download the required public datasets into `data/raw_macro/`.
+4. **Generate the synthetic portfolio:**
+   `python src/01_synthetic_data_generator.py`
+5. **Output:**
+   The script will generate four safely ignored `.csv` files inside `data/synthetic_portfolio/`, including the master book, an 80/20 Train/Test split (2019-2024), and an Out-of-Time validation set (2025-2026).
 
 ## References
 
