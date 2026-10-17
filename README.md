@@ -92,6 +92,5 @@ The data generator (`src/01_synthetic_data_generator.py`) uses a Monte Carlo sim
 
 ## References
 
-- [AI (Data Specialist) Level 7 apprenticeship standard, ST0763](https://skillsengland.education.gov.uk/media/3685/st0763_artificial-intelligence-ai-data-specialist_l7_ap-for-publication_qm.pdf)
 - [PRA SS1/23: Model risk management principles for banks](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/supervisory-statement/2023/ss123.pdf)
 - [Basel III: international regulatory framework for banks](https://www.bis.org/bcbs/basel3.htm)
