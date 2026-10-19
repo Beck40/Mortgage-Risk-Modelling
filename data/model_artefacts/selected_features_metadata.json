@@ -1,0 +1,82 @@
+{
+    "final_14_features": [
+        "arrears_balance",
+        "months_in_arrears",
+        "current_ltv",
+        "credit_score",
+        "broken_arrangements_12m",
+        "monthly_instalment_gbp",
+        "boe_base_rate",
+        "local_unemployment_rate",
+        "hpi_index_change_pct",
+        "litigation_status",
+        "debt_to_income_ratio",
+        "interest_rate",
+        "occupancy_status",
+        "collections_contact_status"
+    ],
+    "numerical_features": [
+        "arrears_balance",
+        "months_in_arrears",
+        "current_ltv",
+        "credit_score",
+        "broken_arrangements_12m",
+        "monthly_instalment_gbp",
+        "boe_base_rate",
+        "local_unemployment_rate",
+        "hpi_index_change_pct",
+        "debt_to_income_ratio",
+        "interest_rate"
+    ],
+    "categorical_features": [
+        "litigation_status",
+        "occupancy_status",
+        "collections_contact_status"
+    ],
+    "winsor_bounds": {
+        "arrears_balance": [
+            760.0847,
+            34212.95959999994
+        ],
+        "months_in_arrears": [
+            3.0,
+            24.0
+        ],
+        "current_ltv": [
+            0.376,
+            1.014
+        ],
+        "credit_score": [
+            293.0,
+            706.0
+        ],
+        "broken_arrangements_12m": [
+            0.0,
+            5.0
+        ],
+        "monthly_instalment_gbp": [
+            183.7388,
+            3093.6036
+        ],
+        "boe_base_rate": [
+            0.1,
+            4.42
+        ],
+        "local_unemployment_rate": [
+            2.1,
+            7.39
+        ],
+        "hpi_index_change_pct": [
+            -16.29,
+            22.41
+        ],
+        "debt_to_income_ratio": [
+            0.81,
+            20.51
+        ],
+        "interest_rate": [
+            1.4,
+            7.56
+        ]
+    }
+}
