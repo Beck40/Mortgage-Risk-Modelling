@@ -1,6 +1,4 @@
-# Artificial Intelligence Apprenticeship Portfolio
-
-## Challenger Modelling for Mortgage Possession Risk (PPGD)
+## Challenger Model for Mortgage Possession Risk (Probability of Possession Given Default)
 
 This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeship (standard [ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)), delivered by Cambridge Spark while I worked in the quantitative modelling team. It describes the assessments, the project they were based on, and the professional evidence behind them.
 
