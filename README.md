@@ -1,9 +1,9 @@
-## Challenger Model for Mortgage Possession Risk (Probability of Possession Given Default)
+## Challenger Modelling for Mortgage Possession Risk (PPGD)
 
 This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeship (standard [ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)), delivered by Cambridge Spark while I worked in the quantitative modelling team. It describes the assessments, the project they were based on, and the professional evidence behind them.
 
 > **Confidentiality note**
-> This repository does not contain employer data, code, documents or model results. The project report covered sensitive data and methodology, so this is a summary only. It draws on published guidance (Basel III/IV, PRA SS1/23) and standard machine learning practice.
+> This repository does not contain proprietary employer data, internal code, documents, or live model results. To demonstrate the end-to-end engineering and validation framework publicly, it includes a bespoke Monte Carlo data generator calibrated to public UK macroeconomic series and aligned with published regulatory standards, including Basel III/IV and PRA SS1/23.
 
 ---
 
@@ -11,84 +11,239 @@ This repository summarises my Level 7 Artificial Intelligence (AI) apprenticeshi
 
 | Assessment | Format | Outcome |
 |---|---|---|
-| Project report and presentation | ~5,000-word report, 30-minute presentation, 45-minute technical Q&A | Distinction |
-| Professional discussion | 90-minute structured discussion supported by a portfolio of evidence | Distinction |
-| Technical knowledge test | 100-minute closed-book exam, four long-response scenario questions | Distinction |
+| **Project report and presentation** | Approximately 5,000-word technical report, 30-minute presentation, 45-minute technical Q&A | **Distinction** |
+| **Professional discussion** | 90-minute structured discussion supported by a portfolio of evidence | **Distinction** |
+| **Technical knowledge test** | 100-minute closed-book exam, four long-response scenario questions | **Distinction** |
 
 ---
 
-## The project
+## 1. Commercial project background
 
-### Background
+### Regulatory context
 
-Banks that model mortgage losses under the internal ratings-based approach estimate Loss Given Default (LGD). One component is the Probability of Possession given Default (PPGD): of the loans that default, how likely is it that the property is repossessed? PPGD feeds into LGD, which combines with Probability of Default and Exposure at Default to estimate capital requirements for regulatory reporting. Regulators expect firms to consider alternative (challenger) models alongside the model in use.
+Banks that model retail mortgage losses under the Internal Ratings-Based (IRB) and IFRS 9 frameworks estimate Loss Given Default (LGD). A primary component of mortgage LGD is the **Probability of Possession Given Default (PPGD)**: once a loan enters default, how likely is it that the property will ultimately be repossessed? PPGD feeds directly into LGD, which combines with Probability of Default (PD) and Exposure at Default (EAD) to determine regulatory capital requirements and impairment provisions. Under UK **PRA SS1/23** Model Risk Management principles, firms are expected to develop and benchmark challenger models alongside incumbent production models.
 
-### Scope
+### Scope and objectives
 
-The existing approach was a decision tree that grouped accounts using a single feature. I developed a challenger model, with two separate PPGD models covering accounts not in default and accounts in default. A secondary aim was to build a framework that would support moving model development from SAS to Python.
+A decision tree that creates account risk grades using a limited feature set can lead to oversimplified risk assessments. I developed a machine-learning challenger framework covering accounts in default and pre-default cohorts. The objective was to capture non-linear risk interactions across a broader feature space, improve calibration accuracy, and establish a method for migrating model development from SAS to Python.
 
-### Approach
+### Trade-offs and real-world governance considerations
 
-1. **Data preparation.** I combined mortgage transaction, property possession and collections/recoveries data, working with data engineers to source it. I engineered features before selection so they could be compared fairly with the raw ones. Data quality checks covered outliers and uninformative values for numerical features, and low-volume classes for categorical features. Missing values were kept as their own category rather than imputed, because the datasets were large enough not to need it.
-2. **Feature selection.** I used a filter method (validity, completeness, ranking by group-weighted AUC and intercorrelation), chosen because it is fast, transparent and less prone to overfitting than automated selection. The challenger used 14 features, compared with the single feature in the existing tree.
-3. **Model development.** XGBoost estimated each account's probability of possession. K-Means then grouped those probabilities into risk grades (for example low, medium and high). Hyperparameters were tuned with randomised search and cross-validation, with class imbalance handled explicitly because possession is rare.
-4. **Python framework.** The code included a connection to SAS so datasets could move between the existing environment and Python.
+- **Explainability:** A gradient-boosted ensemble requires mathematical justification and post-hoc explainability using SHAP to satisfy internal validation and regulatory scrutiny.
+- **Productionisation and compute:** Transitioning large-scale data pipelines from legacy SAS servers to local or cloud Python environments requires careful memory management and modular preprocessing.
+- **External data governance:** Macroeconomic and house-price-index inputs sit outside internal system controls and require stability and boundary checks before ingestion.
 
-### How the grades were evaluated
+### Professional discussion: broader impact
 
-In priority order:
-
-1. **Rank ordering:** grades should stay distinct and keep their order over time, assessed on a 4-quarter moving average to reduce quarterly noise.
-2. **Concentration:** accounts should be spread sensibly across grades (Herfindahl-Hirschman Index).
-3. **Heterogeneity:** grades should carry meaningfully different levels of risk.
-4. **Discrimination:** Gini / ROC AUC on test sets, overall and over time.
-5. **Accuracy:** MAE and RMSE of the predicted probabilities.
-
-Further checks were a classification report, ROC curve and Brier score for the reliability of the probabilities. Statistical rigour for a PRA-regulated setting meant including uncertainty, bias and error estimates.
-
-### Outcome and next steps
-
-I presented the challenger, its validation results and how it compared with the existing decision tree to senior stakeholders and the people who would run the model. This included introducing Brier score testing and the handling of imbalanced data. The next step was to test the grades in a live environment alongside the existing model as part of model monitoring.
-
-### Trade-offs and limitations
-
-- **Explainability.** A more flexible model needs a clear rationale for regulators, and for why it is preferred to a simple tree.
-- **Productionisation.** Moving the code into cloud infrastructure was harder than for a single tree.
-- **Compute.** Training took longer, and limited local memory caused problems on large datasets when not running on cloud infrastructure.
-- **External data.** Some inputs, such as house price data and outlook, were outside my control and needed checking before use.
+- **Knowledge transfer:** Established Python adoption infrastructure, including technical channels, shared repositories, and training materials, to support a 60-person quantitative analytics function.
+- **Quality assurance:** Peer-reviewed codebase updates for internal analysts and external consultants, and validated SAS-to-Python logic translations.
+- **Stakeholder management:** Translated statistical outputs into actionable governance packs for Finance, Internal Audit, and Legal teams.
+- **Model monitoring:** Designed a quarterly Red-Amber-Green (RAG) performance monitoring framework for senior risk committees.
 
 ---
 
-## Professional discussion: evidence themes
+## 2. Open-source Python replication architecture
 
-- **Knowledge transfer:** set up Python adoption support (a Teams channel, shared repositories and presentation materials) to help build capability across a 60-person quantitative analytics function.
-- **Quality assurance:** peer-reviewed code for internal colleagues and external contractors, as well as validating the transalation of SAS code to Python.
-- **Stakeholder management:** explained model outputs to finance, audit and legal teams.
-- **Monitoring:** established a quarterly monitoring framework for multiple mortgage risk models, with RAG-status reporting to senior leadership.
-- **Continuous improvement:** keen intrest in model optimisation and model explainability.
+The public replication provides a self-contained pipeline covering synthetic portfolio generation, regulatory feature selection, model tuning, K-Means Master Rating Scale grading, and multi-period validation.
+
+```text
+Mortgage-Risk-Modelling/
+├── assets/
+│   └── charts/                                    # Exported RAG validation and SHAP visuals
+├── data/
+│   ├── model_artefacts/                           # Serialised models, metadata and scored CSVs
+│   ├── raw_macro/                                 # Public UK macroeconomic series
+│   ├── synthetic_portfolio/                       # Generated train, test and OOT cohorts
+│   └── README.md                                  # Public macro-data sourcing instructions
+├── notebooks/
+│   ├── 01_macro_data_exploration.ipynb            # Macro regime analysis and portfolio generation
+│   ├── 02_feature_selection_and_ranking.ipynb     # Sequential regulatory feature filter
+│   ├── 03_model_build.ipynb                       # Leak-free model build and K-Means grading
+│   └── 04_model_evaluation.ipynb                  # RAG validation and SHAP explainability
+├── Project-Planning/
+│   └── ML Project Plan.pdf                        # Architecture and project scoping
+├── src/
+│   ├── 01_synthetic_data_generator.py             # Monte Carlo portfolio generator
+│   ├── 02_data_preparation.py                     # Data preparation utilities
+│   ├── 03_xgboost_ppgd_model.py                   # PPGD modelling utilities
+│   ├── 04_kmeans_risk_grading.py                  # Risk-grade assignment utilities
+│   └── 05_regulatory_validation.py                # Validation utilities
+└── README.md
+```
+
+### End-to-end pipeline walkthrough
+
+1. **Macroeconomic and portfolio generation (`01_macro_data_exploration.ipynb`)**
+
+   The pipeline combines public UK macroeconomic series with a Monte Carlo simulation in [`src/01_synthetic_data_generator.py`](src/01_synthetic_data_generator.py) to generate a master book of 100,000 accounts. The modelling population contains 84,737 defaulted residential mortgage exposures across the candidate variables, with an approximately 7% possession rate.
+
+   To prevent data leakage and test temporal resilience, the population is split into:
+
+   - **Development set (80% in-time, 2019–2024):** 48,838 accounts; observed PPGD 6.80%.
+   - **In-time test set (20% holdout, 2019–2024):** 12,210 accounts; observed PPGD 6.81%.
+   - **Out-of-time (OOT) holdout (2025–2026):** 23,689 accounts; observed PPGD 7.36%.
+
+2. **Sequential regulatory feature selection (`02_feature_selection_and_ranking.ipynb`)**
+
+   A transparent six-stage funnel is used instead of a black-box recursive wrapper:
+
+   - **Stage 1:** Validity checks.
+   - **Stage 2:** Completeness, with a 5% missingness threshold.
+   - **Stage 3:** Categorical concentration, with a 95% single-level cap.
+   - **Stage 4:** Winsorisation at the 1st and 99th percentiles.
+   - **Stage 5:** Univariate Weight of Evidence (WoE) and group-weighted AUC ranking.
+   - **Stage 6:** Spearman rank intercorrelation filtering at \(|\rho| > 0.70\).
+
+   This reduces the candidate variables to 14 orthogonal credit-risk drivers.
+
+3. **Model build and Master Rating Scale segmentation (`03_model_build.ipynb`)**
+
+   - Fits a `ColumnTransformer` using median imputation, learned quantile winsorisation, standard scaling, and one-hot encoding strictly on the Development set.
+   - Tunes Logistic Regression, Random Forest, LightGBM, and Champion XGBoost using stratified cross-validation.
+   - Applies training-only class reweighting to improve minority-event learning while preserving the observed population prevalence during scoring.
+   - Applies analytical prior correction before evaluation and grading.
+   - Fits one-dimensional K-Means clustering (k=4) to calibrated Development PPGDs.
+   - Maps the continuous scores into four named risk grades:
+     - Grade 1: **Low Risk**
+     - Grade 2: **Moderate Risk**
+     - Grade 3: **High Risk**
+     - Grade 4: **Very High Risk**
+
+4. **Regulatory validation and explainability (`04_model_evaluation.ipynb`)**
+
+   The Champion XGBoost model and K-Means rating system are evaluated across Development, In-Time Test, and OOT cohorts. The notebook includes rank ordering, concentration, heterogeneity, discrimination, accuracy, classification diagnostics, matched-sample Welch tests, and global/local SHAP explainability.
 
 ---
 
-## Open-Source Pipeline
+## 3. Key methodological highlights
 
-To demonstrate the modelling framework without exposing confidential employer data, this repository includes a Python pipeline that generates a realistic and statistically calibrated synthetic mortgage portfolio. 
+### A. Minority-class reweighting and analytical Bayes prior restoration
 
-The data generator (`src/01_synthetic_data_generator.py`) uses a Monte Carlo simulation combined with real macroeconomic datasets (ONS, MoJ, FCA, HM Land Registry) to produce 600,000 defaulted mortgage accounts. The target variable (Probability of Possession given Default) is mathematically weighted to reflect real-world stress scenarios, achieving an authentic ~7% baseline possession rate across a 78-feature space.
+Possession is a minority event in the defaulted mortgage population, with a 6.80% Development base rate. Training tree ensembles on raw imbalanced priors can under-allocate splits to high-risk tail interactions.
 
-### How to Reproduce
+During training, instance weights target an effective 20.00% minority event rate. Because reweighting changes the model's predicted log-odds, raw outputs are not used directly for capital or provisioning calculations. Before risk grading or evaluation, predicted probabilities are analytically recalibrated to the observed Development prior:
 
-1. **Clone the repository:**
-   `git clone https://github.com/Beck40/Mortgage-Risk-Modelling.git`
-2. **Install dependencies:**
-   `pip install -r requirements.txt`
-3. **Acquire the public macro datasets:**
-   Follow the instructions in `data/README.md` to download the required public datasets into `data/raw_macro/`.
-4. **Generate the synthetic portfolio:**
-   `python src/01_synthetic_data_generator.py`
-5. **Output:**
-   The script will generate four safely ignored `.csv` files inside `data/synthetic_portfolio/`, including the master book, an 80/20 Train/Test split (2019-2024), and an Out-of-Time validation set (2025-2026).
+$$
+\text{Odds}_{\text{pop}} =
+\frac{\hat{p}_{\text{weighted}}}{1-\hat{p}_{\text{weighted}}}
+\times
+\frac{\pi_{\text{pop}}/(1-\pi_{\text{pop}})}
+{\pi_{\text{train}}/(1-\pi_{\text{train}})}
+$$
+
+$$
+\text{PPGD}_{\text{calibrated}} =
+\frac{\text{Odds}_{\text{pop}}}{1+\text{Odds}_{\text{pop}}}
+$$
+
+This preserves minority-feature learning while maintaining portfolio-level calibration.
+
+### B. CAP-adjusted Gini for tied grade distributions
+
+The standard Gini coefficient is:
+
+$$
+\text{Standard Gini} = 2 \times (\text{AUC} - 0.5)
+$$
+
+Mapping continuous probabilities into four grades creates tied scores. The evaluation therefore reports a CAP-adjusted Gini using the maximum CAP area achievable while preserving the observed grade bucket sizes. Within each grade, the benchmark places defaults before cures; it does not reorder grades by their realised default rates.
+
+$$
+\text{Adjusted Gini} =
+\frac{\text{Model CAP Area}}
+{\text{Maximum Achievable CAP Area}}
+$$
+
+This separates the discriminatory power achieved by the discrete scale from the loss caused solely by ties within grades.
+
+---
+
+## 4. Regulatory validation and RAG governance visuals
+
+The exported charts are available in [`assets/charts/`](assets/charts/), and the underlying calculations are in [`notebooks/04_model_evaluation.ipynb`](notebooks/04_model_evaluation.ipynb).
+
+### 4-quarter moving-average rank ordering
+
+Grades should remain distinct and strictly monotonic over time:
+
+**Grade 1 < Grade 2 < Grade 3 < Grade 4**
+
+A four-quarter moving average reduces seasonal noise. The notebook checks quarterly crossovers and compressed adjacent-grade differences, with the result displayed using the rank-ordering RAG chart.
+
+### Portfolio concentration and risk heterogeneity
+
+The Herfindahl-Hirschman Index (HHI) is:
+
+$$
+\text{HHI} = \sum_i s_i^2
+$$
+
+where \(s_i\) is the share of accounts in grade \(i\). With four grades, an equal split has a theoretical minimum HHI of 0.25. The current evaluation RAG bands are:
+
+- **Green:** HHI ≤ 0.38
+- **Amber:** 0.38 < HHI ≤ 0.52
+- **Red:** HHI > 0.52
+
+K-Means identifies natural score boundaries rather than forcing equal grade volumes. Consequently, right-skewed mortgage portfolios can concentrate curing accounts in Grade 1. The Welch tests use equal-sized matched samples of up to 200 accounts per grade pair and report grade names, mean PPGD differences, effect sizes, and a green/red significance flag.
+
+### Discrimination stability and Accuracy
+
+The notebook tracks quarterly continuous Gini, four-grade standard Gini, and four-grade CAP-adjusted Gini across all cohorts. The discrimination RAG bands are:
+
+- **Green:** Gini ≥ 0.60
+- **Amber:** 0.50 ≤ Gini < 0.60
+- **Red:** Gini < 0.50
+
+Quarterly MAE is also charted for Development, In-Time Test, and OOT:
+
+- **Green:** MAE ≤ 10%
+- **Amber:** 10% < MAE ≤ 20%
+- **Red:** MAE > 20%
+
+The overall table additionally reports KS statistic, RMSE, and Brier score. The time-series charts are intended to show whether performance remains stable rather than relying only on a single point estimate.
+
+### Model explainability
+
+To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to audit:
+
+- global portfolio drivers using the OOT population;
+- local account-level risk attributions for high-risk Grade 4 exposures.
+
+---
+
+## 5. How to reproduce
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/Beck40/Mortgage-Risk-Modelling.git
+   cd Mortgage-Risk-Modelling
+   ```
+
+2. **Install the Python dependencies**
+
+   ```bash
+   pip install -r requirement.txt
+   ```
+
+3. **Acquire the public macroeconomic datasets**
+
+   Follow [`data/README.md`](data/README.md) to source the required public datasets into `data/raw_macro/`.
+
+4. **Generate the synthetic portfolio**
+
+   ```bash
+   python src/01_synthetic_data_generator.py
+   ```
+
+5. **Run the notebooks in order**
+
+   Execute notebooks 01 through 04. The generated model artefacts and scored cohorts are written under `data/model_artefacts/`; generated portfolio CSVs are written under `data/synthetic_portfolio/`.
+
+---
 
 ## References
 
 - [PRA SS1/23: Model risk management principles for banks](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/supervisory-statement/2023/ss123.pdf)
 - [Basel III: international regulatory framework for banks](https://www.bis.org/bcbs/basel3.htm)
+- [Cambridge Spark apprenticeship standard ST0763](https://skillsengland.education.gov.uk/apprenticeship-standards/st0763-v1-0)
