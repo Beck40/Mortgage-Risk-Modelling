@@ -92,7 +92,7 @@ Mortgage-Risk-Modelling/
    - **Stage 3:** Categorical concentration, with a 95% single-level cap.
    - **Stage 4:** Winsorisation at the 1st and 99th percentiles.
    - **Stage 5:** Univariate Weight of Evidence (WoE) and group-weighted AUC ranking.
-   - **Stage 6:** Spearman rank intercorrelation filtering at \(|\rho| > 0.70\).
+   - **Stage 6:** Spearman rank intercorrelation filtering at (|rho| > 0.70).
 
    This reduces the candidate variables to 14 orthogonal credit-risk drivers.
 
