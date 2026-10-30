@@ -117,28 +117,7 @@ Mortgage-Risk-Modelling/
 
 ## 3. Key methodological highlights
 
-### A. Minority-class reweighting and analytical Bayes prior restoration
-
-Possession is a minority event in the defaulted mortgage population, with a 6.80% Development base rate. Training tree ensembles on raw imbalanced priors can under-allocate splits to high-risk tail interactions.
-
-During training, instance weights target an effective 20.00% minority event rate. Because reweighting changes the model's predicted log-odds, raw outputs are not used directly for capital or provisioning calculations. Before risk grading or evaluation, predicted probabilities are analytically recalibrated to the observed Development prior:
-
-$$
-\text{Odds}_{\text{pop}} =
-\frac{\hat{p}_{\text{weighted}}}{1-\hat{p}_{\text{weighted}}}
-\times
-\frac{\pi_{\text{pop}}/(1-\pi_{\text{pop}})}
-{\pi_{\text{train}}/(1-\pi_{\text{train}})}
-$$
-
-$$
-\text{PPGD}_{\text{calibrated}} =
-\frac{\text{Odds}_{\text{pop}}}{1+\text{Odds}_{\text{pop}}}
-$$
-
-This preserves minority-feature learning while maintaining portfolio-level calibration.
-
-### B. CAP-adjusted Gini for tied grade distributions
+### CAP-adjusted Gini for tied grade distributions
 
 The standard Gini coefficient is:
 
