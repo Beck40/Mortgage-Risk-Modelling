@@ -5,3 +5,6 @@
 # Ignore generated synthetic datasets (full, train, test, and OOT splits)
 /data/synthetic_portfolio/*.csv
 !/data/synthetic_portfolio/.gitkeep
+# Generated model artefacts
+/data/model_artefacts/*.pkl
+/data/model_artefacts/*.csv
