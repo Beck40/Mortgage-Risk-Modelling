@@ -45,7 +45,7 @@ The main challenges were cultural and operational as much as mathematical. Each 
 
 ## 3. Assessor feedback and my reflection
 
-<img src="AP Qualitative Summary.png" width="100%" alt="Official Assessor Feedback Summary">
+<img src="Assessor_Validation.png" style="display: block; margin: 0 auto;" width="70%" alt="Official Assessor Feedback Summary">
 
 Going through the End-Point Assessment (a 5,000-word report, presentation, 90-minute professional discussion, and a closed-book technical exam) was an intense process, so achieving a Distinction across every component was a massive milestone. Looking at the assessor's feedback, a few points really stood out to me:
 
