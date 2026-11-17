@@ -1,13 +1,13 @@
 ## Challenger Model for Mortgage Possession Risk (Probability of Possession Given Default)
 
-This repository summarises my Level 7 Artificial Intelligence apprenticeship, delivered by Cambridge Spark while I worked in the quantitative modelling team. It describes the assessments, the project they were based on, and the professional evidence behind them.
+This repository summarises my MSc Artificial Intelligence Apprenticeship (level 7 study). It describes the assessments, the project they were based on, and the professional evidence behind them.
 
 > **Confidentiality note**
 > This repository does not contain proprietary employer data, internal code, documents, or live model results. To demonstrate the end-to-end engineering and validation framework publicly, it includes a bespoke Monte Carlo data generator calibrated to public UK macroeconomic series and aligned with published regulatory standards, including Basel III/IV and PRA SS1/23.
 
 ---
 
-## Assessment summary
+## 1. Summary
 
 | Assessment | Format | Outcome |
 |---|---|---|
@@ -17,7 +17,13 @@ This repository summarises my Level 7 Artificial Intelligence apprenticeship, de
 
 ---
 
-## 1. Commercial project background
+## 2. Objective
+
+This personal project demonstrates an end-to-end, PRA SS1/23-aligned challenger
+model development and validation workflow for mortgage possession risk. It
+combines synthetic UK mortgage data, supervised machine learning, explainability,
+and production-style RAG monitoring to show how a primary model can be governed
+through Development and Out-of-Time validation.
 
 ### Regulatory context
 
@@ -42,7 +48,7 @@ A decision tree that creates account risk grades using a limited feature set can
 
 ---
 
-## 2. Open-source Python replication architecture
+## 3. Open-source Python replication architecture
 
 The public replication provides a self-contained pipeline covering synthetic portfolio generation, regulatory feature selection, model tuning, K-Means Master Rating Scale grading, and multi-period validation.
 
@@ -53,7 +59,7 @@ Mortgage-Risk-Modelling/
 ├── data/
 │   ├── model_artefacts/                           # Serialised models, metadata and scored CSVs
 │   ├── raw_macro/                                 # Public UK macroeconomic series
-│   ├── synthetic_portfolio/                       # Generated train, test and OOT cohorts
+│   ├── synthetic_portfolio/                       # Generated Development and OOT cohorts
 │   └── README.md                                  # Public macro-data sourcing instructions
 ├── notebooks/
 │   ├── 01_macro_data_exploration.ipynb            # Macro regime analysis and portfolio generation
@@ -73,17 +79,20 @@ Mortgage-Risk-Modelling/
 
 ### End-to-end pipeline walkthrough
 
-1. **Macroeconomic and portfolio generation (`01_macro_data_exploration.ipynb`)**
+1. **Portfolio generation (`01_macro_data_exploration.ipynb`)**
 
    The pipeline combines public UK macroeconomic series with a Monte Carlo simulation in [`src/01_synthetic_data_generator.py`](src/01_synthetic_data_generator.py) to generate a master book of 100,000 accounts. The modelling population contains 84,737 defaulted residential mortgage exposures across the candidate variables, with an approximately 7% possession rate.
 
-   To prevent data leakage and test temporal resilience, the population is split into:
+   To prevent data leakage and test resilience, the population is split into:
 
-   - **Development set (80% in-time, 2019–2024):** 48,838 accounts; observed PPGD 6.80%.
-   - **In-time test set (20% holdout, 2019–2024):** 12,210 accounts; observed PPGD 6.81%.
-   - **Out-of-time (OOT) holdout (2025–2026):** 23,689 accounts; observed PPGD 7.36%.
+   - Development (2019–2024): 48,838 scored accounts used for model development and calibration.
+   - Out-of-Time validation (2025–2026): 23,689 fully held-out scored accounts.
 
-2. **Sequential regulatory feature selection (`02_feature_selection_and_ranking.ipynb`)**
+   The OOT holdout is evaluated directly against Development because it tests
+   true macroeconomic regime stability rather than adding a redundant in-time
+   random split.
+
+2. **Feature selection (`02_feature_selection_and_ranking.ipynb`)**
 
    A transparent six-stage funnel is used instead of a black-box recursive wrapper:
 
@@ -96,26 +105,29 @@ Mortgage-Risk-Modelling/
 
    This reduces the candidate variables to 14 orthogonal credit-risk drivers.
 
-3. **Model build and Master Rating Scale segmentation (`03_model_build.ipynb`)**
+3. **Model build (`03_model_build.ipynb`)**
 
    - Fits a `ColumnTransformer` using median imputation, learned quantile winsorisation, standard scaling, and one-hot encoding strictly on the Development set.
-   - Tunes Logistic Regression, Random Forest, LightGBM, and Champion XGBoost using stratified cross-validation.
+   - Benchmarks candidate models with stratified cross-validation and uses XGBoost as the primary model for validation and monitoring.
    - Applies training-only class reweighting to improve minority-event learning while preserving the observed population prevalence during scoring.
    - Applies analytical prior correction before evaluation and grading.
-   - Fits one-dimensional K-Means clustering (k=4) to calibrated Development PPGDs.
+   - Fits one-dimensional K-Means clustering (k=4) to calibrated Development PPGDs and applies a Development-fitted balanced grade policy for monitoring.
    - Maps the continuous scores into four named risk grades:
      - Grade 1: **Low Risk**
-     - Grade 2: **Moderate Risk**
-     - Grade 3: **High Risk**
-     - Grade 4: **Very High Risk**
+     - Grade 2: **Developing Risk**
+     - Grade 3: **Elevated Risk**
+     - Grade 4: **Critical Risk**
 
-4. **Regulatory validation and explainability (`04_model_evaluation.ipynb`)**
+4. **Regulatory validation and Explainability (`04_model_evaluation.ipynb`)**
 
-   The Champion XGBoost model and K-Means rating system are evaluated across Development, In-Time Test, and OOT cohorts. The notebook includes rank ordering, concentration, heterogeneity, discrimination, accuracy, classification diagnostics, matched-sample Welch tests, and global/local SHAP explainability.
+   The primary XGBoost model and K-Means rating system are evaluated across
+   Development and OOT cohorts. The notebook includes rank ordering,
+   concentration, heterogeneity, discrimination, accuracy, calibration
+   t-tests, classification diagnostics, and global/local SHAP explainability.
 
 ---
 
-## 3. Key methodological highlights
+## 4. Key methodological highlights
 
 ### CAP-adjusted Gini for tied grade distributions
 
@@ -137,21 +149,24 @@ This separates the discriminatory power achieved by the discrete scale from the 
 
 ---
 
-## 4. Regulatory validation and RAG thresholds
+## 5. Regulatory validation and RAG thresholds
 
 The exported charts are available in [`assets/charts/`](assets/charts/), and the underlying calculations are in [`notebooks/04_model_evaluation.ipynb`](notebooks/04_model_evaluation.ipynb).
 
-### Rank Ordering
+### Rank Ordering and Monotonicity
 
-Grades should remain distinct and strictly monotonic over time:
+Risk grades must remain distinct and strictly monotonic over time so that higher risk grades consistently exhibit higher realised possession rates:
 
-**Grade 1 < Grade 2 < Grade 3 < Grade 4**
+**Low Risk < Developing Risk < Elevated Risk < Critical Risk**
 
-A four-quarter moving average reduces seasonal noise. The notebook checks quarterly crossovers and compressed adjacent-grade differences, with the result displayed using the rank-ordering RAG chart.
+In the development cohort, the mean observed possession rates across the four grades are approximately 0.4%, 1.6%, 4.4%, and 20.8% respectively. Grade 4 isolates the acute tail of heavily distressed accounts where voluntary sale or cure is unlikely, whereas Grades 1 to 3 provide granular separation across lower-to-mid risk exposures. A four-quarter moving average is applied to smooth seasonal noise.
+
 
 <img src="assets/charts/01_rank_ordering_rag.png" width="100%" alt="4-Quarter Moving Average Rank Ordering & RAG Status">
 
-Rank ordering remains stable across the Development and Out-of-Time (OOT) cohorts, with a single amber alert occurring in Q4 2021 within the smaller In-Time Test split. This sudden drop in Grade 4 possession rates was driven by COVID-19 policy interventions: FCA repossession moratoriums and payment holidays halted enforcement until mid-2021, and subsequent court backlogs delayed possession warrants for the riskiest accounts. This compression reflects a temporary legal backlog rather than model failure and normalises once court capacity clears in 2022. No threshold changes are required, and the period is simply logged as a policy distortion under PRA SS1/23.
+<br>
+
+The model maintains strict monotonicity across both Development and OOT time horizons, with zero crossovers, keeping a minimum adjacent four-quarter gap of 0.73 percentage points in Development and 0.52 percentage points in OOT. In the Development panel, Grade 4 possession rates dip from ~21.5% in 2019–2020 to ~16.3% across 2021–2022, reflecting the FCA's COVID-19 repossession, payment deferral schemes, and County Court backlogs. Rates then return to ~20%–21.5% in 2023–2024 as court capacity resumed and post-Mini-Budget interest rate hikes increased borrower distress, before stabilising around 18%–20% in the 2025–2026 OOT holdout as base rates eased.
 
 ---
 
@@ -162,64 +177,100 @@ The Herfindahl-Hirschman Index (HHI) is:
 $$
 \text{HHI} = \sum_i s_i^2
 $$
+where $s_i$ is the share of accounts in grade $i$. 
 
-where \(s_i\) is the share of accounts in grade \(i\). With four grades, an equal split has a theoretical minimum HHI of 0.25. The current evaluation RAG bands are:
+- **Green:** HHI < 0.10
+- **Amber:** 0.10 < HHI < 0.25
+- **Red:** HHI > 0.25
 
-- **Green:** HHI ≤ 0.38
-- **Amber:** 0.38 < HHI ≤ 0.52
-- **Red:** HHI > 0.52
+Since we have four grades, the raw HHI has a mathematical floor of 0.25, therefore the chart evaluates at quarterly normalised concentration
 
-K-Means identifies natural score boundaries rather than forcing equal grade volumes. Consequently, right-skewed mortgage portfolios can concentrate curing accounts in Grade 1. The Welch tests use equal-sized matched samples of up to 200 accounts per grade pair and report grade names, mean PPGD differences, effect sizes, and a significance flag.
+$$
+HHI^*_t = \frac{\sum_{i=1}^{4} s_{i,t}^2 - 0.25}{0.75}
+$$
 
 <img src="assets/charts/02_hhi_concentration_rag.png" width="100%" alt="Portfolio Concentration (HHI) Against RAG Thresholds">
 
-The HHI chart shows concentration sitting in the **Red (>0.52)** zone through 2021 before falling sharply into the **Amber** band from 2023 to 2025, and drifting back above 0.52 in late OOT. During the ultra-low interest rate environment and Stamp Duty holiday of 2020–2021, rising house prices gave defaulted borrowers the equity to self-cure or sell voluntarily, clustering most of the book into Grade 1. When the Bank of England raised base rates from late 2022 to combat inflation, payment shocks pushed more borrowers into deeper arrears, spreading volume across Grades 2–4 and lowering HHI. As rates began easing in 2025–2026, higher cure rates returned accounts to Grade 1. Rather than forcing artificial equal-sized buckets, this concentration is defended at committee using the Welch *t*-tests to prove the grades remain statistically distinct, alongside a proposal to split Grade 1 into two sub-grades (`1A/1B`) if finer capital reporting is needed.
+<br>
+
+Defaulted mortgage portfolios are right-skewed, so unconstrained K-Means clustering placed most curing accounts into Grade 1. Applying a Development-fitted balanced threshold policy resolves this skew, achieving a mean quarterly raw HHI of 0.281 ($\text{HHI}^* = 0.041$) in Development and 0.256 ($\text{HHI}^* = 0.008$) in OOT. 
+
+Concentration briefly rises in 2020–2021 (raw HHI peaking near 0.33). Pandemic furlough support, a low 0.10% base rates, and Stamp Duty house-price gains all compressed borrowers into lower risk grades. Bank of England rate hikes took hold from 2022 onwards, risk profiles dispersed back toward the 0.25–0.28 mark and remained steady through the 2025–2026 OOT period.
+
+| Period | Mean quarterly raw HHI | Mean quarterly HHI* | RAG status |
+|---|---:|---:|---|
+| Development (2019–2024) | 0.281 | 0.041 | Green |
+| Out-of-Time (2025–2026) | 0.256 | 0.008 | Green |
+
+### Heterogeneity
+
+An independent two-sample Welch t-test compares score distributions across each pair of risk grades using equal-sized matched samples of up to 200 accounts. The RAG rule is Green when $p \le 0.05$ and Red otherwise.
+
+| Grade pair | Mean score A | Mean score B | t-statistic | p-value | RAG status |
+|---|---:|---:|---:|---:|---|
+| Grade 1 Low Risk vs Grade 2 Developing Risk | 0.0090 | 0.0223 | -31.56 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
+| Grade 1 Low Risk vs Grade 3 Elevated Risk | 0.0090 | 0.0503 | -47.99 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
+| Grade 1 Low Risk vs Grade 4 Critical Risk | 0.0090 | 0.1749 | -20.38 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
+| Grade 2 Developing Risk vs Grade 3 Elevated Risk | 0.0223 | 0.0503 | -31.53 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
+| Grade 2 Developing Risk vs Grade 4 Critical Risk | 0.0223 | 0.1749 | -18.74 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
+| Grade 3 Elevated Risk vs Grade 4 Critical Risk | 0.0503 | 0.1749 | -15.23 | <0.001 | <span style="color:green"><strong>Green</strong></span> |
 
 ---
 
 ### Discrimination, Stability and Accuracy
 
-The notebook tracks quarterly continuous Gini, four-grade standard Gini, and four-grade CAP-adjusted Gini across all cohorts. The discrimination RAG bands are:
+The notebook tracks quarterly Gini through Development and OOT against the following RAG bands.
 
-- **Green:** Gini ≥ 0.60
-- **Amber:** 0.50 ≤ Gini < 0.60
+- **Green:** Gini > 0.65
+- **Amber:** 0.50 < Gini < 0.65
 - **Red:** Gini < 0.50
 
 <img src="assets/charts/03_discrimination_stability_rag.png" width="100%" alt="Quarterly Discrimination Stability">
 
-Two key anomalies stand out in the discrimination chart: a sharp **Red (<0.50)** drop in the In-Time Test set during 2021, and a persistent gap between the **Amber** unadjusted 4-grade Gini and the **Green** CAP-adjusted Gini in OOT. The 2021 drop occurred because the COVID-19 repossession ban prevented high-risk borrowers in deep arrears from actually being repossessed, creating temporary false positives until enforcement resumed in 2022. In the 2025–2026 OOT cohort, the unadjusted 4-grade Gini sits in Amber solely because heavy curing in Grade 1 creates tied scores that mathematically penalise standard AUC; once adjusted for bucket sizes via the CAP benchmark, discrimination remains solidly **Green (>0.62)**. Consequently, ongoing monitoring is anchored to the CAP-adjusted and continuous Gini series to avoid false-positive escalations.
+<br>
 
-Quarterly MAE is also charted for Development, In-Time Test, and OOT:
+XGBoost records an overall Development Gini of 0.719 and an OOT Gini of 0.631. Discrimination peaks near 0.80 in 2020 when only severe legacy defaults progressed during initial pandemic restrictions, making them easy to separate from newer defaults. From 2023 into the 2025–2026 OOT period, Gini moderates to ~0.62–0.65 as prime borrowers rolling off cheap fixed-rate deals onto 5%+ rates experienced sudden payment shocks, slightly blurring the boundary between behavioural credit risk and affordability stress.
 
-- **Green:** MAE ≤ 10%
-- **Amber:** 10% < MAE ≤ 20%
-- **Red:** MAE > 20%
+| Period | XGBoost Gini | Relative drop | RAG status |
+|---|---:|---:|---|
+| Development (2019–2024) | 0.719 | — | Green |
+| Out-of-Time (2025–2026) | 0.631 | 12.2% | Amber |
+
+Quarterly Mean Absolute Error (MAE) is monitored across the same timeline:
+
+- **Green:** MAE < 0.10
+- **Amber:** 0.10 < MAE < 0.25
+- **Red:** MAE > 0.25
 
 <img src="assets/charts/04_mae_accuracy_rag.png" width="100%" alt="Quarterly MAE Stability">
 
-The overall table additionally reports KS statistic, RMSE, and Brier score. The time-series charts are intended to show whether performance remains stable rather than relying only on a single point estimate.
+<br>
 
-While MAE sits comfortably in the **Green (≤10%)** band up to mid-2022, it jumps into the **Amber (>10%–20%)** zone from late 2022 onwards and remains slightly elevated (~10–13%) in the OOT cohort. This upward shift coincided with the rapid Bank of England base rate hikes and cost-of-living squeeze, which made it harder for defaulted borrowers to clear arrears and raised the observed OOT possession rate to 7.36% (up from the 6.80% Development baseline). The model's Bayes prior calibration is locked to the 6.80% Development rate to avoid data leakage, that macro shift shows up as a steady calibration gap. Since the Green Gini proves the model still rank-orders risk well, a full model rebuild is unnecessary; instead, the governance action is to apply a temporary Post-Model Adjustment (PMA) uplift to Grade 3 and 4 LGD provisions.
+Overall MAE is 0.104 in Development and 0.115 in OOT. Quarterly error remains inside the Green band between 2019 and 2022 under low interest rates, before rising to ~0.13–0.15 in 2023–2024. This divergence reflects the 2022–2023 rate-hiking cycle alongside the July 2023 UK Mortgage Charter: deteriorating macro indicators pushed model risk scores higher, while mandatory lender forbearance (such as temporary interest-only switches and 12-month repossession grace periods) delayed physical possessions. In OOT (2025–2026), MAE steadily recovers from 0.129 back down to 0.101 as inflation and rates stabilised.
+
+| Period | XGBoost MAE | RAG status |
+|---|---:|---|
+| Development (2019–2024) | 0.104 | Amber |
+| Out-of-Time (2025–2026) | 0.115 | Amber |
 
 ---
 
 ### Model explainability
 
-To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to audit:
-
-- global portfolio drivers using the OOT population;
-- local account-level risk attributions for high-risk Grade 4 exposures.
+To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to audit global portfolio drivers and local account-level attributions on the OOT population.
 
 <p align="center">
   <img src="assets/charts/05a_SHAP_global.png" width="48%" alt="SHAP Global Feature Importance">
   <img src="assets/charts/05b_SHAP_local.png" width="48%" alt="SHAP Local Explanation">
 </p>
 
-<p style="font-size: inherit;">A common regulatory concern with machine learning models is that volatile macroeconomic indicators (boe_base_rate, local_unemployment_rate) might overpower borrower-specific behaviour during economic shocks. The global SHAP plot confirms this does not happen: core account distress and equity metrics (credit_score, current_ltv, months_in_arrears, and broken_arrangements_12m) drive the bulk of the predictions, with high LTV acting as the main economic transmission channel when stagnating house prices prevent voluntary sales. On the right, the local waterfall plot for a Grade 4 exposure (DEF_0099509, PPGD 79.57%) shows clear account-level logic, where severe arrears and broken payment arrangements drive the high risk score, giving collections teams transparent reasons before initiating litigation.</p>
+<p style="font-size: inherit;">A common regulatory concern with machine learning models is that volatile macroeconomic indicators (BoE base rate, local unemployment rate) might overpower borrower-specific behaviour during economic shocks. The global SHAP plot confirms this does not happen: core account distress and equity metrics (credit score, current LTV, months in arrears, and broken arrangements over 12 months) drive the bulk of the predictions, with high LTV acting as the main economic transmission channel when stagnating house prices prevent voluntary sales. On the right, the local waterfall plot shows an individual exposure where account-level arrears, broken payment arrangements, and LTV contributions are broken down transparently for collections teams before initiating litigation</p>
+
+<br>
 
 ---
 
-## 5. How to reproduce
+## 6. How to reproduce
 
 1. **Clone the repository**
 
@@ -231,7 +282,7 @@ To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to
 2. **Install the Python dependencies**
 
    ```bash
-   pip install -r requirement.txt
+   pip install -r requirements.txt
    ```
 
 3. **Acquire the public macroeconomic datasets**
@@ -248,9 +299,17 @@ To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to
 
    Execute notebooks 01 through 04. The generated model artefacts and scored cohorts are written under `data/model_artefacts/`; generated portfolio CSVs are written under `data/synthetic_portfolio/`.
 
+6. **Regenerate the validation charts**
+
+   ```bash
+   python src/generate_charts.py
+   ```
+
+   This overwrites the four RAG charts under `assets/charts/` at 300 DPI.
+
 ---
 
-## References
+## 7. References
 
 <table>
   <tr>
@@ -265,7 +324,7 @@ To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to
       <p>Key methodologies drawn from this text and integrated into the pipeline include:</p>
       <ul>
         <li><strong>Concentration & Heterogeneity:</strong> Applying the Herfindahl-Hirschman Index (HHI) to quantify rating band concentration and ensure the K-Means risk segments avoid degenerate clustering.</li>
-        <li><strong>Population & Characteristic Drift:</strong> Using Population Stability Index (PSI) and migration matrices to evaluate distribution shifts between Development, In-Time Test, and Out-of-Time (OOT) cohorts.</li>
+        <li><strong>Population & Characteristic Drift:</strong> Using Population Stability Index (PSI) and migration matrices to evaluate distribution shifts between Development and Out-of-Time (OOT) cohorts.</li>
         <li><strong>Discrimination & Calibration Stability:</strong> Benchmarking discriminatory power via standard and CAP-adjusted Gini coefficients, paired with Welch-t diagnostics to confirm statistical separation across risk grades.</li>
       </ul>
       <p><strong>Regulatory Standards:</strong></p>
