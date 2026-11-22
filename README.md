@@ -184,6 +184,7 @@ The Herfindahl-Hirschman Index (HHI) is:
 $$
 \text{HHI} = \sum_i s_i^2
 $$
+
 where $s_i$ is the share of accounts in grade $i$. 
 
 - **Green:** HHI < 0.10
