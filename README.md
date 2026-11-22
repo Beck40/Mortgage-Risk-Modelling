@@ -48,7 +48,7 @@ A decision tree that creates account risk grades using a limited feature set can
 
 ---
 
-## 3. Open-source Python replication architecture
+## 3. Open-source Python replication
 
 The public replication provides a self-contained pipeline covering synthetic portfolio generation, regulatory feature selection, model tuning, K-Means Master Rating Scale grading, and multi-period validation.
 
@@ -69,11 +69,18 @@ Mortgage-Risk-Modelling/
 ├── Project-Planning/
 │   └── ML Project Plan.pdf                        # Architecture and project scoping
 ├── src/
-│   ├── 01_synthetic_data_generator.py             # Monte Carlo portfolio generator
-│   ├── 02_data_preparation.py                     # Data preparation utilities
-│   ├── 03_xgboost_ppgd_model.py                   # PPGD modelling utilities
-│   ├── 04_kmeans_risk_grading.py                  # Risk-grade assignment utilities
-│   └── 05_regulatory_validation.py                # Validation utilities
+│   ├── __init__.py                                # Importable package initialisation
+│   ├── data_generator.py                          # Monte Carlo portfolio generator
+│   ├── data_preparation.py                        # Sequential feature selection
+│   ├── ppgd_model.py                              # PPGD modelling pipeline
+│   ├── risk_grading.py                            # K-Means and quartile risk grading
+│   ├── regulatory_validation.py                   # Regulatory validation metrics
+│   └── generate_charts.py                         # Validation and SHAP visualisations
+├── tests/
+│   └── test_pipeline.py                           # Fast offline unit tests
+├── .github/
+│   └── workflows/
+│       └── ci.yml                                 # pytest CI on pushes and pull requests
 └── README.md
 ```
 
@@ -81,7 +88,7 @@ Mortgage-Risk-Modelling/
 
 1. **Portfolio generation (`01_macro_data_exploration.ipynb`)**
 
-   The pipeline combines public UK macroeconomic series with a Monte Carlo simulation in [`src/01_synthetic_data_generator.py`](src/01_synthetic_data_generator.py) to generate a master book of 100,000 accounts. The modelling population contains 84,737 defaulted residential mortgage exposures across the candidate variables, with an approximately 7% possession rate.
+   The pipeline combines public UK macroeconomic series with a Monte Carlo simulation in [`src/data_generator.py`](src/data_generator.py) to generate a master book of 100,000 accounts. The modelling population contains 84,737 defaulted residential mortgage exposures across the candidate variables, with an approximately 7% possession rate.
 
    To prevent data leakage and test resilience, the population is split into:
 
@@ -259,10 +266,16 @@ Overall MAE is 0.104 in Development and 0.115 in OOT. Quarterly error remains in
 
 To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to audit global portfolio drivers and local account-level attributions on the OOT population.
 
-<p align="center">
-  <img src="assets/charts/05a_SHAP_global.png" width="48%" alt="SHAP Global Feature Importance">
-  <img src="assets/charts/05b_SHAP_local.png" width="48%" alt="SHAP Local Explanation">
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/charts/05a_SHAP_global.png" width="400" height="250" alt="SHAP Global Feature Importance">
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/charts/05b_SHAP_local.png" width="400" height="250" alt="SHAP Local Explanation">
+    </td>
+  </tr>
+</table>
 
 <p style="font-size: inherit;">A common regulatory concern with machine learning models is that volatile macroeconomic indicators (BoE base rate, local unemployment rate) might overpower borrower-specific behaviour during economic shocks. The global SHAP plot confirms this does not happen: core account distress and equity metrics (credit score, current LTV, months in arrears, and broken arrangements over 12 months) drive the bulk of the predictions, with high LTV acting as the main economic transmission channel when stagnating house prices prevent voluntary sales. On the right, the local waterfall plot shows an individual exposure where account-level arrears, broken payment arrangements, and LTV contributions are broken down transparently for collections teams before initiating litigation</p>
 
@@ -270,7 +283,7 @@ To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to
 
 ---
 
-## 6. How to reproduce
+## 6. Quickstart
 
 1. **Clone the repository**
 
@@ -292,20 +305,33 @@ To support PRA SS1/23 transparency expectations, `shap.TreeExplainer` is used to
 4. **Generate the synthetic portfolio**
 
    ```bash
-   python src/01_synthetic_data_generator.py
+   python -m src.data_generator
    ```
 
-5. **Run the notebooks in order**
-
-   Execute notebooks 01 through 04. The generated model artefacts and scored cohorts are written under `data/model_artefacts/`; generated portfolio CSVs are written under `data/synthetic_portfolio/`.
-
-6. **Regenerate the validation charts**
+5. **Run the importable pipeline modules**
 
    ```bash
-   python src/generate_charts.py
+   python -m src.data_preparation
+   python -m src.ppgd_model
+   python -m src.risk_grading
+   python -m src.regulatory_validation
    ```
 
-   This overwrites the four RAG charts under `assets/charts/` at 300 DPI.
+   The generated model artefacts and scored cohorts are written under `data/model_artefacts/`; generated portfolio CSVs are written under `data/synthetic_portfolio/`.
+
+6. **Generate the validation charts**
+
+   ```bash
+   python -m src.generate_charts
+   ```
+
+   Existing results and exported charts are preserved; this command regenerates charts only when intentionally run.
+
+7. **Run the deterministic unit tests**
+
+   ```bash
+   python -m pytest
+   ```
 
 ---
 
